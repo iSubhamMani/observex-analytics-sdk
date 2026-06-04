@@ -4,18 +4,20 @@ import React, { createContext, useContext } from "react";
 
 interface AnalyticsConfig {
   websiteId: string;
+  tabSessionId?: string | null;
 }
 
-const INGESTION_URL = "https://ingest.observex.dev/track";
+const INGESTION_URL = "http://localhost:8001/ingest";
 
 const AnalyticsContext = createContext<AnalyticsConfig | null>(null);
 
 export const AnalyticsConfigProvider = ({
   websiteId,
+  tabSessionId,
   children,
 }: AnalyticsConfig & { children: React.ReactNode }) => {
   return (
-    <AnalyticsContext.Provider value={{ websiteId }}>
+    <AnalyticsContext.Provider value={{ websiteId, tabSessionId }}>
       {children}
     </AnalyticsContext.Provider>
   );
@@ -45,7 +47,8 @@ export const useAnalytics = () => {
     if (typeof window === "undefined") return;
 
     const payload = {
-      website_id: context.websiteId,
+      tabSessionId: context.tabSessionId,
+      websiteId: context.websiteId,
       event_name: eventName,
       url: window.location.href,
       pathname: window.location.pathname,
@@ -58,18 +61,16 @@ export const useAnalytics = () => {
     const blob = new Blob([JSON.stringify(payload)], {
       type: "application/json",
     });
-    console.log(JSON.stringify(payload));
-    /*if (navigator.sendBeacon) {
-        
+
+    if (navigator.sendBeacon) {
       navigator.sendBeacon(INGESTION_URL, blob);
     } else {
-        console.log(JSON.stringify(payload));
       fetch(INGESTION_URL, {
         method: "POST",
         body: blob,
         keepalive: true,
       });
-    }*/
+    }
   };
 
   return { track };
