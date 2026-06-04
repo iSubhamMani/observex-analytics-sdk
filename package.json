@@ -1,6 +1,6 @@
 {
   "name": "@subhamxmani/analytics-sdk",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Lightweight analytics SDK for React and Next.js",
   "type": "module",
   "main": "./dist/index.cjs",

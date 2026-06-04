@@ -10,7 +10,43 @@ function PageViewTracker() {
   const { track } = useAnalytics();
 
   useEffect(() => {
+    let startTime = Date.now();
+    let trackingSent = false;
+
+    // 1. Fire the initial entry pageview tracking log
     track("pageview");
+
+    // Helper function to calculate duration and send data safely
+    const sendDurationMetrics = () => {
+      if (trackingSent) return; // Prevent double reporting on identical scopes
+
+      const durationSeconds = Math.round((Date.now() - startTime) / 1000);
+
+      // Save bandwidth and filter out instant bounce bots by checking for > 0 seconds
+      if (durationSeconds > 0) {
+        track("page_leave", { duration_seconds: durationSeconds });
+        trackingSent = true;
+      }
+    };
+
+    // 2. Handle tab termination, window close, minimize actions, or desktop app switches
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        sendDurationMetrics();
+      } else if (document.visibilityState === "visible") {
+        // Reset timestamp baseline if user returns to tab so idle time isn't double-counted
+        startTime = Date.now();
+        trackingSent = false;
+      }
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // 3. Handle SPA routing jumps (triggers when pathname changes)
+    return () => {
+      sendDurationMetrics();
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [pathname, searchParams]);
 
   return null;
